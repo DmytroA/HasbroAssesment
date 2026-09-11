@@ -13,10 +13,10 @@ import { PNG } from 'pngjs';
 import jsQR from 'jsqr';
 import { createApp } from '../app';
 import { RuntimeConfig } from '../config';
-import { SqliteEventsRepository } from '../database/sqlite-events.repository';
-import { TemplatesService } from '../templates/templates.module';
-import { GAME_TEMPLATES } from '../templates/templates';
-import { EventsService } from '../events/events.service';
+import { GAME_TEMPLATES } from '../helpers/templates';
+import { EventsService } from '../providers/events.service';
+import { TemplatesService } from '../providers/templates.service';
+import { SqliteEventsRepository } from '../repositories/sqlite-events.repository';
 
 const directory = mkdtempSync(join(tmpdir(), 'tabletop-test-'));
 const config: RuntimeConfig = {
@@ -122,7 +122,7 @@ test('independent SQLite connections competing in worker threads cannot oversell
         {
           eval: true,
           workerData: {
-            repository: require.resolve('../database/sqlite-events.repository'),
+            repository: require.resolve('../repositories/sqlite-events.repository'),
             config,
             id: event.id,
             name: `Worker ${i}`,

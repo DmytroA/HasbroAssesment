@@ -1,9 +1,9 @@
 import { DateTime } from 'luxon';
 import { readConfig } from './config';
-import { SqliteEventsRepository } from './database/sqlite-events.repository';
-import { TemplatesService } from './templates/templates.module';
-import { GAME_TEMPLATES } from './templates/templates';
-import { EventsService } from './events/events.service';
+import { GAME_TEMPLATES } from './helpers/templates';
+import { EventsService } from './providers/events.service';
+import { TemplatesService } from './providers/templates.service';
+import { SqliteEventsRepository } from './repositories/sqlite-events.repository';
 
 const config = readConfig();
 const repository = new SqliteEventsRepository(config);

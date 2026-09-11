@@ -24,6 +24,7 @@ export class EventAssetsService {
     if (error || !value) throw error ?? new Error('Calendar generation failed');
     return value;
   }
+
   qr(event: EventDetail) {
     return QRCode.toBuffer(event.registrationUrl, {
       type: 'png',

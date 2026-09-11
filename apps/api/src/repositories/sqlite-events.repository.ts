@@ -5,8 +5,8 @@ import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { EventSummary } from '@tabletop/contracts';
 import { RUNTIME_CONFIG, RuntimeConfig } from '../config';
-import { EventsRepository, NewEvent, RegistrationResult } from '../events/events.repository';
-import { INITIAL_SCHEMA } from './schema';
+import { INITIAL_SCHEMA } from '../helpers/schema';
+import { EventsRepository, NewEvent, RegistrationResult } from './events.repository';
 
 const SELECT_EVENTS = `SELECT e.id, e.name, e.template_id AS templateId, e.game_name AS gameName,
   e.format, e.starts_at AS startsAt, e.ends_at AS endsAt, e.time_zone AS timeZone,

@@ -1,8 +1,8 @@
-import { BadRequestException, Inject, Injectable, Module } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { GameTemplate } from '@tabletop/contracts';
-import { GAME_TEMPLATES } from './templates';
 
 export const TEMPLATE_DEFINITIONS = Symbol('TEMPLATE_DEFINITIONS');
+
 @Injectable()
 export class TemplatesService {
   constructor(@Inject(TEMPLATE_DEFINITIONS) private readonly definitions: readonly GameTemplate[]) {
@@ -24,17 +24,14 @@ export class TemplatesService {
       ids.add(template.id);
     }
   }
+
   list(): GameTemplate[] {
     return this.definitions.map((template) => ({ ...template, formats: [...template.formats] }));
   }
+
   get(id: string): GameTemplate {
     const template = this.definitions.find((item) => item.id === id);
     if (!template) throw new BadRequestException('Choose a supported game.');
     return template;
   }
 }
-@Module({
-  providers: [{ provide: TEMPLATE_DEFINITIONS, useValue: GAME_TEMPLATES }, TemplatesService],
-  exports: [TemplatesService],
-})
-export class TemplatesModule {}

@@ -10,9 +10,9 @@ import { randomUUID } from 'node:crypto';
 import { DateTime } from 'luxon';
 import type { EventDetail } from '@tabletop/contracts';
 import { RUNTIME_CONFIG, RuntimeConfig } from '../config';
-import { TemplatesService } from '../templates/templates.module';
-import { CreateEventDto } from './event.dto';
-import { EventsRepository } from './events.repository';
+import { CreateEventDto } from '../helpers/event.dto';
+import { EventsRepository } from '../repositories/events.repository';
+import { TemplatesService } from './templates.service';
 
 @Injectable()
 export class EventsService {
@@ -21,14 +21,17 @@ export class EventsService {
     private readonly templates: TemplatesService,
     @Inject(RUNTIME_CONFIG) private readonly config: RuntimeConfig,
   ) {}
+
   list() {
     return this.repository.list();
   }
+
   get(id: string): EventDetail {
     const event = this.repository.find(id);
     if (!event) throw new NotFoundException('Event not found.');
     return { ...event, registrationUrl: `${this.config.publicUrl}/events/${event.id}/register` };
   }
+
   create(input: CreateEventDto): EventDetail {
     const template = this.templates.get(input.templateId);
     if (!template.formats.includes(input.format))
@@ -57,6 +60,7 @@ export class EventsService {
     });
     return this.get(event.id);
   }
+
   register(eventId: string, name: string) {
     const displayName = name.normalize('NFKC').trim().replace(/\s+/gu, ' ');
     if (!displayName || displayName.length > 80)
