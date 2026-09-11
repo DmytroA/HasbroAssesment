@@ -14,6 +14,7 @@ export class ApiError extends Error {
     super(message);
   }
 }
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, {
     ...options,
@@ -26,6 +27,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
   return response.json();
 }
+
 export const api = {
   config: () => request<AppConfig>('/config'),
   events: () => request<EventSummary[]>('/events'),

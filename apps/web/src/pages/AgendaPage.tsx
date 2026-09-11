@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { api } from '../api';
 import { ErrorNotice, Loading, Seats } from '../components';
-import { eventTime, groupByDay } from '../date';
+import { api } from '../helpers/api';
+import { eventTime, groupByDay } from '../helpers/date';
 
 export function AgendaPage() {
   const events = useQuery({ queryKey: ['events'], queryFn: api.events, refetchInterval: 15000 });

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
-import { api } from '../api';
 import { BackLink, ErrorNotice, EventFacts, Loading, Seats } from '../components';
+import { api } from '../helpers/api';
 
 export function RegisterPage() {
   const { id = '' } = useParams();

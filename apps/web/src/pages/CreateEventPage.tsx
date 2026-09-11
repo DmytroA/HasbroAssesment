@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import type { AppConfig, CreateEventInput } from '@tabletop/contracts';
-import { api } from '../api';
 import { BackLink, ErrorNotice, Loading } from '../components';
+import { api } from '../helpers/api';
 
 function EventForm({ config }: { config: AppConfig }) {
   const first = config.templates[0];

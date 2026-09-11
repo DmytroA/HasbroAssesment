@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { EventSummary } from '@tabletop/contracts';
-import { eventTime, formatDate } from './date';
+import { eventTime, formatDate } from '../helpers/date';
 
 export function ErrorNotice({ error }: { error: Error | null }) {
   return error ? (
@@ -9,6 +9,7 @@ export function ErrorNotice({ error }: { error: Error | null }) {
     </div>
   ) : null;
 }
+
 export function Loading() {
   return (
     <p className="loading" role="status">
@@ -16,6 +17,7 @@ export function Loading() {
     </p>
   );
 }
+
 export function Seats({ event }: { event: EventSummary }) {
   const left = event.capacity - event.registrationCount;
   return (
@@ -24,6 +26,7 @@ export function Seats({ event }: { event: EventSummary }) {
     </span>
   );
 }
+
 export function EventFacts({ event }: { event: EventSummary }) {
   return (
     <dl className="event-facts">
@@ -53,6 +56,7 @@ export function EventFacts({ event }: { event: EventSummary }) {
     </dl>
   );
 }
+
 export function BackLink({
   to = '/',
   children = 'All events',

@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import type { EventSummary } from '@tabletop/contracts';
 import { groupByDay } from './date';
+
 test('agenda groups UTC timestamps by store-local day and sorts chronologically', () => {
   const base = {
     id: '1',
