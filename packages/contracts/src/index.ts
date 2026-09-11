@@ -6,8 +6,15 @@ export interface GameTemplate {
   defaultCapacity: number;
 }
 
-export interface StoreSettings { name: string; location: string; timeZone: string }
-export interface AppConfig { store: StoreSettings; templates: GameTemplate[] }
+export interface StoreSettings {
+  name: string;
+  location: string;
+  timeZone: string;
+}
+export interface AppConfig {
+  store: StoreSettings;
+  templates: GameTemplate[];
+}
 export interface CreateEventInput {
   name: string;
   templateId: string;
@@ -28,5 +35,11 @@ export interface EventSummary {
   capacity: number;
   registrationCount: number;
 }
-export interface EventDetail extends EventSummary { registrationUrl: string }
-export interface RegistrationReceipt { id: string; name: string; eventId: string }
+export interface EventDetail extends EventSummary {
+  registrationUrl: string;
+}
+export interface RegistrationReceipt {
+  id: string;
+  name: string;
+  eventId: string;
+}

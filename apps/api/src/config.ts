@@ -6,11 +6,23 @@ import type { StoreSettings } from '@tabletop/contracts';
 export const projectRoot = resolve(__dirname, '../../..');
 config({ path: resolve(projectRoot, '.env'), quiet: true });
 
-export interface RuntimeConfig { databasePath: string; publicUrl: string; port: number; store: StoreSettings }
+export interface RuntimeConfig {
+  databasePath: string;
+  publicUrl: string;
+  port: number;
+  store: StoreSettings;
+}
 export function readConfig(): RuntimeConfig {
   const publicUrl = process.env.PUBLIC_URL ?? 'http://localhost:5173';
   const url = new URL(publicUrl);
-  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
+  if (
+    !['http:', 'https:'].includes(url.protocol) ||
+    url.username ||
+    url.password ||
+    url.pathname !== '/' ||
+    url.search ||
+    url.hash
+  ) {
     throw new Error('PUBLIC_URL must be an http(s) origin, for example http://localhost:5173');
   }
   const timeZone = process.env.STORE_TIME_ZONE ?? 'America/Los_Angeles';
@@ -21,7 +33,11 @@ export function readConfig(): RuntimeConfig {
     databasePath: resolve(projectRoot, process.env.DATABASE_PATH ?? 'data/tabletop.sqlite'),
     publicUrl: url.origin,
     port,
-    store: { name: process.env.STORE_NAME ?? 'The Gathering Place', location: process.env.STORE_LOCATION ?? '123 Main Street, Seattle, WA', timeZone },
+    store: {
+      name: process.env.STORE_NAME ?? 'The Gathering Place',
+      location: process.env.STORE_LOCATION ?? '123 Main Street, Seattle, WA',
+      timeZone,
+    },
   };
 }
 export const RUNTIME_CONFIG = Symbol('RUNTIME_CONFIG');

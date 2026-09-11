@@ -6,4 +6,7 @@ async function main() {
   await app.listen(config.port, '0.0.0.0');
   console.log(`Tabletop API ready on http://localhost:${config.port}`);
 }
-void main().catch(error => { console.error(error); process.exitCode = 1; });
+void main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

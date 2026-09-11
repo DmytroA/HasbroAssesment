@@ -43,7 +43,7 @@ NestJS serves the compiled React app and API from port 3000, including direct li
 npm run check
 ```
 
-This type-checks/builds both apps and runs API integration and React interaction tests. API tests use a temporary database, not your local events. GitHub Actions runs the same command on Node 24.
+This checks formatting, type-checks/builds both apps, and runs API integration and React interaction tests. API tests use a temporary database, not your local events. GitHub Actions runs the same command on Node 24. Use `npm run format` to apply the shared formatting rules.
 
 Coverage focuses on:
 
@@ -83,7 +83,7 @@ SQLite's synchronous API and single-writer model are appropriate for this small 
 
 ## AI usage note
 
-OpenAI Codex was used to read the assessment, propose a scoped architecture, implement the React/NestJS app, write focused tests, and verify builds. Official NestJS and Node.js documentation informed the validation and SQLite choices. One AI suggestion rejected before implementation was Sites scaffolding/hosting: its generated runtime would not preserve the requested NestJS stack, so the project uses a conventional npm workspace. The concurrency design was verified with actual competing database connections rather than trusting the generated implementation alone. Review and adapt this note to match your own work before submission.
+OpenAI Codex was used to read the assessment, propose a scoped architecture, implement the React/NestJS app, write focused tests, and verify builds. Official NestJS and Node.js documentation informed the validation and SQLite choices. The first AI-generated QR test only checked the PNG header, which could pass even if the code pointed to the wrong destination; it was strengthened to decode the image with an independent library and assert the exact registration URL. The concurrency design was also verified with competing database connections rather than trusting generated code alone. Review and adapt this note to match your own work before submission.
 
 ## Repository map
 
@@ -101,15 +101,15 @@ packages/contracts/  Shared API shapes
 
 ## API
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/api/config` | Store settings and game templates |
-| GET / POST | `/api/events` | List / create events |
-| GET | `/api/events/:id` | Event details and registration URL |
-| POST | `/api/events/:id/registrations` | Register with `{ "name": "Alex" }` |
-| GET | `/api/events/:id/qr.png` | Registration QR image |
-| GET | `/api/events/:id/calendar.ics` | Calendar invite download |
-| GET | `/api/health` | Process health |
+| Method     | Path                            | Purpose                            |
+| ---------- | ------------------------------- | ---------------------------------- |
+| GET        | `/api/config`                   | Store settings and game templates  |
+| GET / POST | `/api/events`                   | List / create events               |
+| GET        | `/api/events/:id`               | Event details and registration URL |
+| POST       | `/api/events/:id/registrations` | Register with `{ "name": "Alex" }` |
+| GET        | `/api/events/:id/qr.png`        | Registration QR image              |
+| GET        | `/api/events/:id/calendar.ics`  | Calendar invite download           |
+| GET        | `/api/health`                   | Process health                     |
 
 Reference documentation: [NestJS validation](https://docs.nestjs.com/techniques/validation), [Node.js SQLite](https://nodejs.org/api/sqlite.html).
 

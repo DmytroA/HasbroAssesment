@@ -1,0 +1,6 @@
+node_modules
+**/dist
+.tools
+data
+package-lock.json
+Senior_Software_Engineer_—_Take-Home.md

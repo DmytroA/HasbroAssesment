@@ -1,1 +1,10 @@
-{ "compilerOptions": { "target": "ES2022", "module": "CommonJS", "declaration": true, "strict": true, "outDir": "dist" }, "include": ["src"] }
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "declaration": true,
+    "strict": true,
+    "outDir": "dist"
+  },
+  "include": ["src"]
+}

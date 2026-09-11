@@ -6,7 +6,13 @@ import { EventsService } from './events.service';
 import { EventAssetsService } from './event-assets.service';
 import { EventsController } from './events.controller';
 
-@Module({ imports: [TemplatesModule], controllers: [EventsController], providers: [
-  { provide: EventsRepository, useClass: SqliteEventsRepository }, EventsService, EventAssetsService,
-] })
+@Module({
+  imports: [TemplatesModule],
+  controllers: [EventsController],
+  providers: [
+    { provide: EventsRepository, useClass: SqliteEventsRepository },
+    EventsService,
+    EventAssetsService,
+  ],
+})
 export class EventsModule {}
