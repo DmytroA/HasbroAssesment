@@ -20,3 +20,16 @@ export function groupByDay(events: EventSummary[]) {
   }
   return [...groups.entries()];
 }
+
+// HTML date inputs need YYYY-MM-DD; use explicit parts instead of locale-dependent ordering.
+export function dateKey(value: string, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(value));
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)!.value;
+  return `${part('year')}-${part('month')}-${part('day')}`;
+}

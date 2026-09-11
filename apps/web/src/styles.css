@@ -592,3 +592,34 @@ footer {
     transition: none !important;
   }
 }
+
+.agenda-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.agenda-controls label {
+  margin: 0;
+  flex: 1 1 220px;
+  max-width: 320px;
+}
+.agenda-date-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.agenda-controls .field-help {
+  flex-basis: 100%;
+  margin: 0;
+}
+.agenda-date-actions [aria-pressed='true'] {
+  background: #edf3ef;
+  border-color: var(--green);
+}
+.agenda-result-count {
+  font-size: 0.875rem;
+  margin-bottom: 24px;
+}

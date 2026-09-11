@@ -66,6 +66,10 @@ If the phone cannot connect:
 
 If phone access is unavailable, click **Register to play** on the computer to test the same registration flow. Physical scanning requires network connectivity; a local LAN address is not accessible over mobile data or from outside that network. The QR code and copyable link use the configured public origin, never an untrusted request Host header.
 
+### Find events on a particular day
+
+The calendar opens as a grouped-by-day agenda showing **All dates**. Use **Event date** to see only events starting on that date, **Today** to select today's date in the configured store timezone, or **All dates** to clear the filter. Empty dates show **No events scheduled**. Filtering uses each event's saved timezone, consistent with the agenda headings, rather than the viewer's device timezone.
+
 ## Verify
 
 ```sh
