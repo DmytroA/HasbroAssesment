@@ -2,6 +2,8 @@
 
 A small organized-play app built with **React, TypeScript, NestJS, and SQLite**. Organizers create events from game templates; players follow a link or scan a QR code to reserve a seat.
 
+[Run locally](#run-locally) · [Design write-up](#design-write-up) · [AI usage](#ai-usage-note) · [Verification](#verify) · [Phone testing](#test-registration-from-a-phone)
+
 ## Run locally
 
 Requires **Node.js 24+** and npm. From the repository root:
@@ -106,43 +108,49 @@ Game references: [Magic formats](https://magic.wizards.com/en/formats), [Arena f
 
 ## Design write-up
 
-### Capacity and concurrent registration
+I prioritized a complete scheduling-to-registration flow and correctness at the point where two players compete for the last seat. React and NestJS share TypeScript contracts; SQLite provides durable storage and transactions without requiring reviewers to provision a database.
 
-`Event` owns `capacity`, validated as an integer from 1 through 30 at the HTTP boundary and constrained by SQLite. `Registration` references its event. The registered count is derived from registrations, avoiding a separate counter that could drift. A composite unique constraint on `(event_id, normalized_name)` also indexes the per-event count query.
+### Capacity: an event invariant, enforced atomically
 
-Registration is one short `BEGIN IMMEDIATE` transaction: obtain the SQLite write lock, find the event, check for an existing normalized name, check availability, insert, and commit. Competing connections must acquire the same write lock before reading availability. With one seat left, the winner commits its registration; the next connection reads the updated count and receives HTTP 409. A database trigger rejects inserts at capacity even if a caller bypasses the service. SQLite waits up to five seconds for a lock; exhausted contention maps to a retryable HTTP 503. There are no asynchronous calls inside the transaction.
+The organizer chooses a capacity from 1 to 30, starting from the selected template's default. The final value belongs to the **event**, so changing a template cannot change an existing event's limit. The API validates the integer range, and SQLite enforces it with a `CHECK` constraint. Attendance is counted from registration rows rather than maintained as a second, potentially inconsistent counter.
 
-Names are trimmed, Unicode NFKC-normalized, whitespace-collapsed, and lowercased for duplicate comparison. Repeated names return 409 before the full check, so an existing player receives a useful duplicate message. This is a deliberate name-only identity compromise: two people sharing a name must add an initial. It is not authentication or proof of identity. The UI disables submission while pending and refreshes availability, but the server remains authoritative. Registrant names are not exposed in public event responses.
+The critical operation is checking availability and inserting a registration **within the same write transaction**. `BEGIN IMMEDIATE` acquires SQLite's write lock before either step. If two players request the last seat, the first transaction inserts and commits; the second then reads the updated count and receives HTTP 409 with a full-event message. A database trigger also prevents inserts beyond capacity. Lock contention waits up to five seconds, then returns HTTP 503 so the client can retry. Tests exercise both simultaneous HTTP requests and independent SQLite connections in worker threads.
 
-### Templates and application structure
+Duplicate registration uses a unique `(event_id, normalized_name)` constraint. Names are Unicode-normalized, trimmed, whitespace-collapsed, and compared case-insensitively. This is a deliberate compromise for name-only signup: people sharing a name need an initial. Availability displayed in React is informative; the server makes the final admission decision.
 
-`apps/api/src/helpers/templates.ts` contains data definitions for Magic: The Gathering, Magic: The Gathering Arena, and Dungeons & Dragons. Each drives **available formats, default duration, and default capacity**. NestJS's template service validates definitions and supplies both form configuration and server-side format validation. Adding a fourth game—or chess with a “Rapid” format—means adding one definition. No controller, repository, form, or event service needs a game-name conditional. The hard limit of 30 is an event policy, independent of template defaults.
+### Templates: configuration with explicit boundaries
 
-An event snapshots its game name, selected format, resolved start/end instants, store timezone, location, and capacity. Changing a template or store setting therefore does not retroactively change an existing event or invite. Input is store-local wall time; Luxon converts it to UTC and rejects invalid/nonexistent or repeated DST times rather than silently choosing an instant. The UI displays and groups events in the event's stored timezone. `ics` generates UTC calendar invites with stable event UIDs; `qrcode` generates registration QR images.
+Each definition in `apps/api/src/helpers/templates.ts` drives available formats/session types, default duration, and default capacity. The form reads these definitions, and the server validates the selected format against the same template. Adding a fourth game requires one definition; the controller, event service, repository, and form remain unchanged. D&D demonstrates non-card session types, and an automated test adds chess without changing event logic. New mechanics such as table assignment would require an explicit domain extension.
 
-The NestJS dependency flow is **controller → service → repository port → SQLite implementation**. Controllers handle transport, DTOs validate input, services apply event rules, and the repository owns atomic persistence. Template and event functionality live in Nest modules. Shared TypeScript contracts live in `packages/contracts`; React uses TanStack Query for server state and React Router for pages. The API performs runtime validation even though both layers share types. This keeps boundaries explicit without adding CQRS, an event bus, or generic base repositories to a small application.
+Events snapshot their selected game details, capacity, location, timezone, and resolved start/end instants. Later configuration changes cannot silently rewrite scheduled events. Store-local input is converted to UTC, with ambiguous or nonexistent daylight-saving times rejected. Calendar downloads preserve those instants.
 
-### Scope cuts and next steps
+I organized the backend by responsibility: controllers handle HTTP, providers apply business rules, repositories own persistence and transactions, and Nest modules wire dependencies. Shared contracts describe the API without replacing runtime validation. This gives database-specific code a clear boundary while keeping the implementation small.
 
-The calendar is the explicitly allowed day-grouped agenda, not a month grid. There is one configured store, no authentication, and no payments, email, recurrence, editing/cancellation, or admin dashboard. Template defaults are intentionally simple store presets, not a tournament rules engine. The sample store address is fake; registration, storage, QR generation, and ICS generation are real. No elapsed-time claim is made: implementation and validation were AI-assisted, and the final submitted timebox should reflect the candidate's actual working time.
+### Scope choices and next steps
 
-SQLite's synchronous API and single-writer model are appropriate for this small local app; sustained contention would block the Node event loop while waiting. Next priorities would be idempotency tokens for ambiguous network retries, stronger player identity if required, explicit policies for registration closing, and calendar-client/phone acceptance checks. Before a public production deployment, add authentication for organizers and abuse controls. If scaling to multiple machines, move the repository to a transactional shared database and retain the same concurrency tests. Schema version 1 is initialized transactionally; future schema changes need explicit numbered migrations.
+I chose the allowed day-grouped agenda, with a date picker and Today shortcut, to make daily scheduling usable without implementing a month grid. I used `qrcode` and `ics` for standard file/image generation. The store address is a placeholder and game defaults are illustrative presets; persistence and registration are implemented. Authentication, payments, email, recurrence, and event editing/cancellation stay outside scope. The current Wizards lineup's departure from the three-TCG requirement is documented above.
+
+Next I would add idempotency keys for retries after a lost response and complete physical-phone and Google Calendar/Outlook acceptance checks. Organizer authentication and abuse controls would precede public deployment. SQLite's synchronous, single-writer design is a conscious small-app tradeoff: sustained contention can block the Node event loop. Multi-instance growth would justify a shared transactional database behind the repository boundary, retaining the concurrency tests.
 
 ## AI usage note
 
-OpenAI Codex was used to read the assessment, propose a scoped architecture, implement the React/NestJS app, write focused tests, and verify builds. Official NestJS and Node.js documentation informed the validation and SQLite choices. The first AI-generated QR test only checked the PNG header, which could pass even if the code pointed to the wrong destination; it was strengthened to decode the image with an independent library and assert the exact registration URL. The concurrency design was also verified with competing database connections rather than trusting generated code alone. Review and adapt this note to match your own work before submission.
+I used OpenAI Codex to scaffold the React/NestJS application, draft implementation and tests, and assist with debugging and documentation. I rejected the initial AI-generated folder layout in favor of my own structure organized by responsibility and refactored the backend into controllers, providers, repositories, modules, and helpers, with a separate React application container. For this application's size, that made the HTTP boundary, business rules, persistence, and dependency wiring easier for me to navigate and review. I used builds, interaction tests, and database concurrency tests to check the resulting implementation.
 
 ## Repository map
 
 ```text
 apps/api/src/
-  events/       HTTP DTOs, controller, services, persistence port
-  database/     SQLite schema and repository implementation
-  templates/    Extensible game definitions and service
-  test/         API, concurrency, QR, and ICS tests
+  controllers/   HTTP endpoints
+  providers/     Event rules, templates, QR and calendar generation
+  repositories/  Persistence interface and SQLite implementation
+  modules/       NestJS dependency wiring
+  helpers/       DTO validation, schema, and game definitions
+  test/          API, concurrency, QR, and ICS tests
 apps/web/src/
-  pages/        Agenda, create, event details, registration
-  api.ts        Typed HTTP boundary
+  containers/    Application shell and route composition
+  pages/         Agenda, create, event details, registration
+  components/    Shared UI components
+  helpers/       Typed HTTP client and date utilities
 packages/contracts/  Shared API shapes
 ```
 
