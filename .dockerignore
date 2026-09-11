@@ -1,0 +1,10 @@
+node_modules
+**/node_modules
+**/dist
+.tools
+.git
+.env
+data
+node-runtime.zip
+node-shasums.txt
+*.log

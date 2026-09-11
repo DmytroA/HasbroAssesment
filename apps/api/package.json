@@ -1,0 +1,40 @@
+{
+  "name": "@tabletop/api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "nodemon --watch src --ext ts --exec ts-node src/main.ts",
+    "start": "node dist/main.js",
+    "test": "npm run build && node --test dist/test/*.test.js",
+    "seed": "ts-node src/seed.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.0",
+    "@nestjs/core": "^11.1.0",
+    "@nestjs/platform-express": "^11.1.0",
+    "@tabletop/contracts": "1.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "dotenv": "^17.2.0",
+    "ics": "^3.8.1",
+    "luxon": "^3.7.2",
+    "qrcode": "^1.5.4",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/luxon": "^3.7.0",
+    "@types/node": "^24.0.0",
+    "@types/pngjs": "^6.0.5",
+    "@types/qrcode": "^1.5.5",
+    "@types/supertest": "^6.0.3",
+    "ical.js": "^2.2.1",
+    "jsqr": "^1.4.0",
+    "nodemon": "^3.1.10",
+    "pngjs": "^7.0.0",
+    "supertest": "^7.1.0",
+    "ts-node": "^10.9.2"
+  }
+}

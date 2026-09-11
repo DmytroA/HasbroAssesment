@@ -1,0 +1,11 @@
+node_modules/
+dist/
+data/
+.env
+.tools/
+node-runtime.zip
+node-shasums.txt
+*.tsbuildinfo
+coverage/
+*.log
+Senior_Software_Engineer_—_Take-Home.md
