@@ -13,18 +13,18 @@ try {
     const service = new EventsService(repository, new TemplatesService(GAME_TEMPLATES), config);
     GAME_TEMPLATES.forEach((template, index) => {
       service.create({
-        name: ['Friday Night Magic', 'Pokémon League', 'Sunday Yu-Gi-Oh!'][index],
+        name: `${template.name} - ${template.formats[0]}`,
         templateId: template.id,
         format: template.formats[0],
         capacity: template.defaultCapacity,
         startsAtLocal: DateTime.now()
           .setZone(config.store.timeZone)
-          .plus({ weeks: 1 })
-          .set({ weekday: (5 + index) as 5 | 6 | 7, hour: 18, minute: 0 })
+          .plus({ weeks: 1, days: index })
+          .set({ hour: 18, minute: 0 })
           .toFormat("yyyy-MM-dd'T'HH:mm"),
       });
     });
-    console.log('Created three sample events.');
+    console.log(`Created ${GAME_TEMPLATES.length} sample events.`);
   }
 } finally {
   repository.onModuleDestroy();

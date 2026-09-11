@@ -86,6 +86,20 @@ Coverage focuses on:
 
 Manual acceptance walkthrough: create a capacity-1 event → find it in the agenda → open its event page → follow/scan the registration link → register → attempt a different name → observe the full message. Download the `.ics` file and open it in your calendar. Actual Google Calendar/Outlook import and physical-phone scanning still need a manual check.
 
+### Wizards of the Coast game lineup
+
+| Game                       | Available formats / session types         | Default duration | Default capacity |
+| -------------------------- | ----------------------------------------- | ---------------- | ---------------- |
+| Magic: The Gathering       | Commander, Standard, Booster Draft        | 180 minutes      | 24 players       |
+| Magic: The Gathering Arena | Standard, Historic, Brawl                 | 120 minutes      | 16 players       |
+| Dungeons & Dragons         | One-shot, Campaign session, Learn to Play | 240 minutes      | 6 players        |
+
+Durations and capacities are configurable store presets, not official Wizards tournament rules. D&D's options describe session types using the same template field as card-game formats. Arena events represent in-store gatherings where attendees use the digital game; this app does not integrate with Arena matchmaking. Existing events retain their original game details and registrations; changing the lineup only affects new events. The seed script uses the current templates when the database is empty and does not overwrite existing events.
+
+**Assessment scope:** this requested Wizards lineup is not three distinct trading card games. Arena is digital Magic, and D&D is a tabletop roleplaying game. To meet the original three-TCG requirement strictly, use three distinct TCG templates and optionally include D&D as an additional demonstration of extensibility.
+
+Game references: [Magic formats](https://magic.wizards.com/en/formats), [Arena formats](https://magic.wizards.com/en/news/mtg-arena/mtg-arena-formats), [D&D Basic Rules](https://media.wizards.com/2018/dnd/downloads/DnD_BasicRules_2018.pdf).
+
 ## Design write-up
 
 ### Capacity and concurrent registration
@@ -98,7 +112,7 @@ Names are trimmed, Unicode NFKC-normalized, whitespace-collapsed, and lowercased
 
 ### Templates and application structure
 
-`apps/api/src/templates/templates.ts` contains data definitions for Magic: The Gathering, Pokémon, and Yu-Gi-Oh!. Each drives **available formats, default duration, and default capacity**. NestJS's template service validates definitions and supplies both form configuration and server-side format validation. Adding a fourth game—or chess with a “Rapid” format—means adding one definition. No controller, repository, form, or event service needs a game-name conditional. The hard limit of 30 is an event policy, independent of template defaults.
+`apps/api/src/helpers/templates.ts` contains data definitions for Magic: The Gathering, Magic: The Gathering Arena, and Dungeons & Dragons. Each drives **available formats, default duration, and default capacity**. NestJS's template service validates definitions and supplies both form configuration and server-side format validation. Adding a fourth game—or chess with a “Rapid” format—means adding one definition. No controller, repository, form, or event service needs a game-name conditional. The hard limit of 30 is an event policy, independent of template defaults.
 
 An event snapshots its game name, selected format, resolved start/end instants, store timezone, location, and capacity. Changing a template or store setting therefore does not retroactively change an existing event or invite. Input is store-local wall time; Luxon converts it to UTC and rejects invalid/nonexistent or repeated DST times rather than silently choosing an instant. The UI displays and groups events in the event's stored timezone. `ics` generates UTC calendar invites with stable event UIDs; `qrcode` generates registration QR images.
 
