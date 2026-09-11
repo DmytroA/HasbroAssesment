@@ -1,4 +1,4 @@
-# Tabletop event calendar
+# Game Event Calendar
 
 A small organized-play app built with **React, TypeScript, NestJS, and SQLite**. Organizers create events from game templates; players follow a link or scan a QR code to reserve a seat.
 

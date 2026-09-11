@@ -16,10 +16,8 @@ export function AppContainer() {
       <header className="site-header">
         <div className="header-inner">
           <Link to="/" className="brand">
-            <span className="brand-mark" aria-hidden="true">
-              T
-            </span>
-            tabletop<span className="brand-dot">.</span>
+            <img className="brand-mark" src="/calendar.svg" alt="" width="40" height="40" />
+            <span className="brand-name">Game Event Calendar</span>
           </Link>
           <span className="store-name">{config.data?.store.name ?? 'Organized play'}</span>
           <Link className="nav-link" to="/">

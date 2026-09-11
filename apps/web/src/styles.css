@@ -100,25 +100,21 @@ p {
 .brand {
   display: flex;
   align-items: center;
+  gap: 10px;
+  min-width: 0;
   font-family: var(--heading);
   font-weight: 700;
-  font-size: 1.65rem;
-  letter-spacing: -0.06em;
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  letter-spacing: -0.035em;
 }
 .brand-mark {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 36px;
-  background: #193c2e;
-  color: #dbf28c;
-  border-radius: 7px;
-  transform: rotate(-5deg);
-  margin-right: 10px;
-  font-size: 1.25rem;
+  display: block;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
 }
-.brand-dot {
-  color: var(--green);
+.brand-name {
+  line-height: 1.15;
 }
 .store-name {
   font-size: 0.875rem;
