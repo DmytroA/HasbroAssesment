@@ -275,3 +275,163 @@ test('database constraints reject direct overbooking and invalid event capacity'
     db.close();
   }
 });
+
+test('concurrent duplicate requests reserve only one seat and duplicates are scoped to the event', async () => {
+  const first = await create(30);
+  const responses = await Promise.all(
+    ['Alex Smith', ' alex smith ', 'ALEX  SMITH', 'Ａｌｅｘ Smith'].map((name) =>
+      http().post(`/api/events/${first.id}/registrations`).send({ name }),
+    ),
+  );
+  assert.equal(responses.filter((response) => response.status === 201).length, 1);
+  assert.equal(responses.filter((response) => response.status === 409).length, 3);
+  const second = await create(1);
+  await http()
+    .post(`/api/events/${second.id}/registrations`)
+    .send({ name: 'Alex Smith' })
+    .expect(201);
+  assert.equal((await http().get(`/api/events/${first.id}`)).body.registrationCount, 1);
+  assert.equal((await http().get(`/api/events/${second.id}`)).body.registrationCount, 1);
+});
+
+test('a duplicate on a full event reports the duplicate and does not affect another event', async () => {
+  const first = await create(1);
+  await http().post(`/api/events/${first.id}/registrations`).send({ name: 'Alex' }).expect(201);
+  const duplicate = await http()
+    .post(`/api/events/${first.id}/registrations`)
+    .send({ name: 'alex' })
+    .expect(409);
+  assert.match(duplicate.body.message, /already registered/);
+  const second = await create(1);
+  await http().post(`/api/events/${second.id}/registrations`).send({ name: 'Taylor' }).expect(201);
+  assert.equal((await http().get(`/api/events/${first.id}`)).body.registrationCount, 1);
+});
+
+test('registration rejects client-controlled fields without creating a seat', async () => {
+  const event = await create(1);
+  await http()
+    .post(`/api/events/${event.id}/registrations`)
+    .send({ name: 'Alex', capacity: 30, eventId: randomUUID() })
+    .expect(400);
+  await http().post(`/api/events/${event.id}/registrations`).send({}).expect(400);
+  assert.equal((await http().get(`/api/events/${event.id}`)).body.registrationCount, 0);
+  await http().post(`/api/events/${event.id}/registrations`).send({ name: 'Alex' }).expect(201);
+});
+
+test(
+  'database lock exhaustion returns 503; releasing the lock allows a clean retry',
+  { timeout: 20000 },
+  async () => {
+    const event = await create(1);
+    const competingConnection = new DatabaseSync(config.databasePath);
+    try {
+      competingConnection.exec('BEGIN IMMEDIATE');
+      try {
+        const response = await http()
+          .post(`/api/events/${event.id}/registrations`)
+          .send({ name: 'Alex' })
+          .expect(503);
+        assert.match(response.body.message, /try again/);
+      } finally {
+        competingConnection.exec('ROLLBACK');
+      }
+      assert.equal((await http().get(`/api/events/${event.id}`)).body.registrationCount, 0);
+      await http().post(`/api/events/${event.id}/registrations`).send({ name: 'Alex' }).expect(201);
+      assert.equal((await http().get(`/api/events/${event.id}`)).body.registrationCount, 1);
+    } finally {
+      competingConnection.close();
+    }
+  },
+);
+
+test('template and store changes affect new events but preserve previously scheduled details', () => {
+  const repository = new SqliteEventsRepository({ ...config, databasePath: ':memory:' });
+  try {
+    const originalService = new EventsService(
+      repository,
+      new TemplatesService(GAME_TEMPLATES),
+      config,
+    );
+    const original = originalService.create({ ...validEvent, capacity: 12 });
+    const changedTemplates = GAME_TEMPLATES.map((template) =>
+      template.id === 'magic'
+        ? {
+            ...template,
+            name: 'Updated Magic preset',
+            formats: ['Standard'],
+            defaultDurationMinutes: 60,
+            defaultCapacity: 8,
+          }
+        : template,
+    );
+    const changedConfig = {
+      ...config,
+      store: { ...config.store, location: 'New store address', timeZone: 'America/New_York' },
+    };
+    const changedService = new EventsService(
+      repository,
+      new TemplatesService(changedTemplates),
+      changedConfig,
+    );
+    const next = changedService.create({ ...validEvent, format: 'Standard', capacity: 8 });
+    assert.deepEqual(changedService.get(original.id), original);
+    assert.equal(next.gameName, 'Updated Magic preset');
+    assert.equal(next.location, 'New store address');
+    assert.equal(next.timeZone, 'America/New_York');
+    assert.equal(Date.parse(next.endsAt) - Date.parse(next.startsAt), 60 * 60000);
+    assert.equal(next.capacity, 8);
+  } finally {
+    repository.onModuleDestroy();
+  }
+});
+
+test('calendar download preserves Unicode and escaped multiline text across a daylight-saving transition', async () => {
+  const name = 'Commander café, finals; round 1\nBring a deck — 日本語';
+  const event = (
+    await http()
+      .post('/api/events')
+      .send({ ...validEvent, name, startsAtLocal: '2099-03-08T01:30' })
+      .expect(201)
+  ).body;
+  const response = await http().get(`/api/events/${event.id}/calendar.ics`).expect(200);
+  const component = new ICAL.Component(ICAL.parse(response.text));
+  assert.equal(component.getAllSubcomponents('vevent').length, 1);
+  const parsed = new ICAL.Event(component.getFirstSubcomponent('vevent')!);
+  assert.equal(parsed.summary, name);
+  assert.equal(parsed.startDate.toJSDate().toISOString(), '2099-03-08T09:30:00.000Z');
+  assert.equal(parsed.endDate.toJSDate().toISOString(), '2099-03-08T12:30:00.000Z');
+  const again = await http().get(`/api/events/${event.id}/calendar.ics`).expect(200);
+  const repeated = new ICAL.Event(
+    new ICAL.Component(ICAL.parse(again.text)).getFirstSubcomponent('vevent')!,
+  );
+  assert.equal(repeated.uid, parsed.uid);
+});
+
+test('missing event assets return 404 and registration links ignore an untrusted Host header', async () => {
+  const missingId = randomUUID();
+  await http().get(`/api/events/${missingId}/calendar.ics`).expect(404);
+  await http().get(`/api/events/${missingId}/qr.png`).expect(404);
+  const event = await create();
+  const detail = (
+    await http()
+      .get(`/api/events/${event.id}`)
+      .set('Host', 'attacker.example')
+      .set('X-Forwarded-Host', 'attacker.example')
+      .expect(200)
+  ).body;
+  assert.equal(detail.registrationUrl, `${config.publicUrl}/events/${event.id}/register`);
+});
+
+test('registrations and duplicate protection survive reopening the database', async () => {
+  const event = await create(2);
+  await http().post(`/api/events/${event.id}/registrations`).send({ name: 'Alex' }).expect(201);
+  const reopened = new SqliteEventsRepository(config);
+  try {
+    assert.equal(reopened.find(event.id)?.registrationCount, 1);
+    assert.equal(reopened.register(event.id, 'Alex', 'alex').status, 'duplicate');
+    assert.equal(reopened.register(event.id, 'Taylor', 'taylor').status, 'registered');
+  } finally {
+    reopened.onModuleDestroy();
+  }
+  assert.equal((await http().get(`/api/events/${event.id}`)).body.registrationCount, 2);
+});

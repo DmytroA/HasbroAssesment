@@ -83,12 +83,14 @@ This checks formatting, type-checks/builds both apps, and runs API integration a
 Coverage focuses on:
 
 - Complete creation, listing, registration, duplicate, and full-event flows.
-- Concurrent last-seat HTTP requests and synchronized worker threads using independent database connections.
-- Database capacity constraints, persistence after reopening, input validation, and missing events.
+- Concurrent last-seat requests, normalized duplicate races, and synchronized worker threads using independent database connections.
+- Database capacity constraints, registration persistence after reopening, lock-timeout recovery, input validation, and missing event assets.
+- Existing event snapshots after template/store changes, event isolation, and registration URLs unaffected by untrusted Host headers.
 - Adding a fourth, non-card game through template configuration alone.
 - Store-local day grouping and daylight-saving gaps/ambiguities.
 - ICS parsing with `ical.js`, including escaped text, location, UTC start/end and stable UID; QR decoding with `jsqr`.
-- React creation defaults, registration confirmation, full state, and server rejection after stale availability.
+- React creation defaults, date filtering, registration confirmation, full state, and server rejection after stale availability.
+- Event-page calendar links, clipboard success/failure, QR image fallback, missing-event feedback, and client handling of validation, proxy, and network errors.
 
 Manual acceptance walkthrough: create a capacity-1 event → find it in the agenda → open its event page → follow/scan the registration link → register → attempt a different name → observe the full message. Download the `.ics` file and open it in your calendar. Actual Google Calendar/Outlook import and physical-phone scanning still need a manual check.
 
