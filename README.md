@@ -21,11 +21,9 @@ docker compose up --build
 
 Open **http://localhost:3000**. A named volume persists events across container restarts. The Docker configuration is supplied, but was not executed in the development environment because its Docker daemon was unavailable.
 
-### Configuration and phone scanning
+### Configuration
 
 Defaults work without an environment file. Copy `.env.example` to `.env` to change the store name, address, IANA timezone, database path, port, or public origin. The sample address is a placeholder; set your real store address before sharing invites.
-
-To scan from a phone on the same network, set `PUBLIC_URL=http://YOUR_COMPUTER_LAN_IP:5173`, restart the API, and open that address on the phone. For Docker/production use port 3000 instead. The computer must allow inbound traffic on that port. `localhost` on a phone refers to the phone itself. The QR code and copyable link use this configured origin, never an untrusted request Host header.
 
 For a production-style local run:
 
@@ -36,6 +34,37 @@ npm start
 ```
 
 NestJS serves the compiled React app and API from port 3000, including direct links to event and registration pages.
+
+### Test registration from a phone
+
+Events are stored in SQLite on the computer running the server, not in browser local storage. A phone can use the same events when it can reach that computer. **A QR link containing `localhost` will not work on a phone:** it points to the phone itself.
+
+1. **Connect the computer and phone to the same Wi-Fi network.** Keep the computer awake and the app running throughout the test.
+2. **Find the computer's LAN address.** Run `npm run dev` and look for Vite's `Network:` URL, such as `http://192.168.1.50:5173/`. Use the address for your active Wi-Fi/Ethernet connection, not a VPN or virtual adapter. On Windows, `ipconfig` also shows the active adapter's IPv4 address. On macOS/Linux, you can find it in the active connection's network settings.
+3. **Set the public origin in the repository root's `.env` file.** Copy `.env.example` to `.env` if it does not exist, then update `PUBLIC_URL`. Replace the example address below with **your own computer's address**:
+
+   ```dotenv
+   PUBLIC_URL=http://192.168.1.50:5173
+   ```
+
+   This setting controls the QR code and registration link; it does not configure the computer's network. Keep `.env` local—it is excluded from Git. If you have multiple checkouts, edit the one you actually run.
+
+4. **Restart the app.** Stop `npm run dev` with Ctrl+C and run it again so the API reads the new setting. Refresh any event page already open to get the updated link and QR image. Existing events do not need to be recreated.
+5. **Check connectivity before scanning.** On the phone, open the same address directly, for example `http://192.168.1.50:5173`. The event calendar should load. Development mode already listens on the network and proxies API requests, so the phone only needs access to port **5173**.
+6. **Test the full flow.** On the computer, create a future event with capacity **1** and open its event page. Scan the displayed QR code with the phone's camera, follow the link, and register a name. Confirm the success message and that the computer's event page updates to `1 / 1 registered`. Open the registration link again: it should report that the event is full. You can also download the calendar invite from the phone.
+
+**Docker or production-style local run:** use `PUBLIC_URL=http://YOUR_COMPUTER_LAN_IP:3000` and open port **3000** instead. For Docker, rerun `docker compose up --build` after changing `.env` so Compose applies the new environment setting; `docker compose restart` alone does not update it. For `npm start`, stop and start the process again.
+
+If the phone cannot connect:
+
+| Symptom                                | What to check                                                                                                                                                                                               |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| QR opens `localhost` or an old address | Check `PUBLIC_URL` in the running checkout, restart the server, and refresh the event page before scanning again. An already-exported `PUBLIC_URL` environment variable takes precedence over `.env`.       |
+| The LAN address does not load          | Confirm both devices are on the same network and the server is running. Allow inbound access to the app's port through the computer's firewall on the trusted/private network; do not disable the firewall. |
+| Same Wi-Fi, but still unreachable      | Guest/corporate Wi-Fi may isolate devices, and VPN routing may interfere. Try a network that permits communication between devices.                                                                         |
+| It worked before switching networks    | The computer's IP address may have changed. Update `PUBLIC_URL`, restart, and refresh the QR code.                                                                                                          |
+
+If phone access is unavailable, click **Register to play** on the computer to test the same registration flow. Physical scanning requires network connectivity; a local LAN address is not accessible over mobile data or from outside that network. The QR code and copyable link use the configured public origin, never an untrusted request Host header.
 
 ## Verify
 
